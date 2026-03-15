@@ -46,10 +46,10 @@ function initMap() {
     .then(geojson => {
       L.geoJSON(geojson, {
         style: {
-          color: '#2255bb',
-          weight: 2,
+          color: '#7aa0d4',
+          weight: 0.8,
           fillColor: '#ccdcf5',
-          fillOpacity: 0.25,
+          fillOpacity: 0.15,
         },
         onEachFeature(feature, layer) {
           layer.bindTooltip(feature.properties.nom, {
@@ -68,6 +68,8 @@ function initMap() {
     chunkedLoading: true,
     maxClusterRadius: 40,
     disableClusteringAtZoom: 9,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: false,
   });
   map.addLayer(clusterGroup);
 }

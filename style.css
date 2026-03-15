@@ -188,6 +188,11 @@ body {
   height: 100%;
 }
 
+/* Supprime le contour de focus Leaflet sur les polygones */
+.leaflet-interactive:focus {
+  outline: none;
+}
+
 /* ── Dept tooltip ── */
 .dept-tooltip {
   background: rgba(26, 31, 46, 0.85);
