@@ -29,7 +29,7 @@ const TRANSLATIONS = {
     loadError:      'Unable to load data.',
     routeError:     'Unable to calculate route',
     noStations:     'No station found on this route.',
-    routeHeader:    (n, total) => `⭐ ${n} cheapest (out of ${total} stations)`,
+    routeHeader:    (n, total) => `⭐ ${n} closest (out of ${total} stations)`,
     youAreHere:     'You are here',
     noPrices:       'No prices available',
     updatedOn:      'Updated on',
@@ -64,7 +64,7 @@ const TRANSLATIONS = {
     loadError:      'Impossible de charger les données.',
     routeError:     'Impossible de calculer l\'itinéraire',
     noStations:     'Aucune station trouvée sur cet itinéraire.',
-    routeHeader:    (n, total) => `⭐ ${n} moins chères (sur ${total} stations)`,
+    routeHeader:    (n, total) => `⭐ ${n} plus proches (sur ${total} stations)`,
     youAreHere:     'Vous êtes ici',
     noPrices:       'Aucun prix disponible',
     updatedOn:      'Mis à jour le',
@@ -628,6 +628,8 @@ async function calculateRoute() {
   const toVal   = document.getElementById('route-to').value.trim();
   if (!fromVal || !toVal) return;
 
+  localStorage.setItem('route', JSON.stringify({ from: fromVal, to: toVal }));
+
   clearRoute();
   document.getElementById('route-loading').classList.remove('hidden');
   document.getElementById('route-error').classList.add('hidden');
@@ -661,7 +663,7 @@ async function calculateRoute() {
         return dist <= RADIUS_KM ? { s, lat, lng, price, dist } : null;
       })
       .filter(Boolean)
-      .sort((a, b) => a.price - b.price);
+      .sort((a, b) => a.dist - b.dist);
 
     if (nearby.length === 0) {
       document.getElementById('route-error').textContent = t('noStations');
@@ -711,7 +713,12 @@ async function calculateRoute() {
 }
 
 document.getElementById('route-btn').addEventListener('click', calculateRoute);
-document.getElementById('route-clear').addEventListener('click', clearRoute);
+document.getElementById('route-clear').addEventListener('click', () => {
+  localStorage.removeItem('route');
+  document.getElementById('route-from').value = '';
+  document.getElementById('route-to').value   = '';
+  clearRoute();
+});
 
 // ── Autocomplete ──────────────────────────────────────────────────────────────
 
@@ -802,4 +809,11 @@ map.on('moveend zoomend', () => {
   localStorage.setItem('mapView', JSON.stringify({ lat, lng, zoom: map.getZoom() }));
   updateStatsFromBounds();
 });
-loadData();
+loadData().then(() => {
+  const savedRoute = JSON.parse(localStorage.getItem('route') || 'null');
+  if (savedRoute) {
+    document.getElementById('route-from').value = savedRoute.from;
+    document.getElementById('route-to').value   = savedRoute.to;
+    calculateRoute();
+  }
+});
