@@ -391,10 +391,20 @@ function buildPopup(station, highlightedFuel) {
   </div>`;
 }
 
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+function isPriceRecent(station, fuel) {
+  const dateField = `${fuel.toLowerCase()}_maj`;
+  const dateVal = station[dateField];
+  if (!dateVal) return true; // no date info → keep
+  return Date.now() - new Date(dateVal).getTime() <= TWO_WEEKS_MS;
+}
+
 function renderMarkers() {
   clusterGroup.clearLayers();
 
-  const stations = routeStationFilter ? allStations.filter(s => routeStationFilter.has(s)) : allStations;
+  const stations = (routeStationFilter ? allStations.filter(s => routeStationFilter.has(s)) : allStations)
+    .filter(s => isPriceRecent(s, currentFuel));
 
   const prices = stations
     .map(s => getStationPrice(s, currentFuel))
