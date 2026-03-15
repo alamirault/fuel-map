@@ -20,6 +20,7 @@ let map;
 let clusterGroup;
 let allStations = [];
 let currentFuel = 'Gazole';
+let stationMarkers = []; // [{station, marker}]
 
 // ── Map init ────────────────────────────────────────────────────────────────
 
@@ -208,7 +209,7 @@ function renderMarkers() {
   const max = Math.max(...prices);
   const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
 
-  let count = 0;
+  stationMarkers = [];
 
   allStations.forEach(station => {
     const price = getStationPrice(station, currentFuel);
@@ -223,7 +224,7 @@ function renderMarkers() {
     const marker = L.marker([lat, lng], { icon: makeIcon(color, price) });
     marker.bindPopup(buildPopup(station, currentFuel), { maxWidth: 260 });
     clusterGroup.addLayer(marker);
-    count++;
+    stationMarkers.push({ station, marker });
   });
 
   updateStatsFromBounds();
@@ -238,24 +239,35 @@ function updateStats(count, avg, min, max) {
   document.getElementById('stat-max').textContent   = max  != null ? max.toFixed(3)  + ' €' : '—';
 }
 
+let visibleMinMarker = null;
+let visibleMaxMarker = null;
+
 function updateStatsFromBounds() {
   const bounds = map.getBounds();
-  const prices = allStations
-    .filter(s => {
-      const lat = s.geom?.lat;
-      const lng = s.geom?.lon;
-      return lat && lng && bounds.contains([lat, lng]);
-    })
-    .map(s => getStationPrice(s, currentFuel))
-    .filter(p => p != null);
+  const visible = stationMarkers.filter(({ station }) => {
+    const lat = station.geom?.lat;
+    const lng = station.geom?.lon;
+    return lat && lng && bounds.contains([lat, lng]);
+  });
 
-  if (prices.length === 0) {
+  const withPrice = visible
+    .map(({ station, marker }) => ({ price: getStationPrice(station, currentFuel), station, marker }))
+    .filter(({ price }) => price != null);
+
+  if (withPrice.length === 0) {
+    visibleMinMarker = null;
+    visibleMaxMarker = null;
     updateStats(0, null, null, null);
     return;
   }
 
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
+  withPrice.sort((a, b) => a.price - b.price);
+  visibleMinMarker = withPrice[0].marker;
+  visibleMaxMarker = withPrice[withPrice.length - 1].marker;
+
+  const prices = withPrice.map(x => x.price);
+  const min = prices[0];
+  const max = prices[prices.length - 1];
   const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
   updateStats(prices.length, avg, min, max);
 }
@@ -276,6 +288,31 @@ document.getElementById('fuel-select').addEventListener('change', e => {
   currentFuel = e.target.value;
   renderMarkers();
 });
+
+let pulseMarker = null;
+
+function pulseOnMarker(marker) {
+  if (!marker) return;
+  const latlng = marker.getLatLng();
+
+  if (pulseMarker) { pulseMarker.remove(); pulseMarker = null; }
+
+  pulseMarker = L.marker(latlng, {
+    icon: L.divIcon({
+      className: '',
+      html: '<div class="pulse-ring"></div>',
+      iconSize: [60, 60],
+      iconAnchor: [30, 30],
+    }),
+    interactive: false,
+    zIndexOffset: 2000,
+  }).addTo(map);
+
+  setTimeout(() => { if (pulseMarker) { pulseMarker.remove(); pulseMarker = null; } }, 3000);
+}
+
+document.getElementById('stat-min').closest('.stat-box').addEventListener('click', () => pulseOnMarker(visibleMinMarker));
+document.getElementById('stat-max').closest('.stat-box').addEventListener('click', () => pulseOnMarker(visibleMaxMarker));
 
 // ── Geolocation ───────────────────────────────────────────────────────────────
 

@@ -96,6 +96,27 @@ body {
 .stat-value.green { color: #4caf82; }
 .stat-value.red   { color: #e05252; }
 
+/* ── Pulse animation ── */
+.pulse-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(74, 144, 226, 0.25);
+  border: 3px solid #4a90e2;
+  animation: pulse 0.8s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.stat-box.clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.stat-box.clickable:hover { background: #2e3854; }
+
 /* ── Loading ── */
 .loading {
   display: flex;
