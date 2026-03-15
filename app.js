@@ -226,7 +226,7 @@ function renderMarkers() {
     count++;
   });
 
-  updateStats(count, avg, min, max);
+  updateStatsFromBounds();
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
@@ -236,6 +236,28 @@ function updateStats(count, avg, min, max) {
   document.getElementById('stat-avg').textContent   = avg  != null ? avg.toFixed(3)  + ' €' : '—';
   document.getElementById('stat-min').textContent   = min  != null ? min.toFixed(3)  + ' €' : '—';
   document.getElementById('stat-max').textContent   = max  != null ? max.toFixed(3)  + ' €' : '—';
+}
+
+function updateStatsFromBounds() {
+  const bounds = map.getBounds();
+  const prices = allStations
+    .filter(s => {
+      const lat = s.geom?.lat;
+      const lng = s.geom?.lon;
+      return lat && lng && bounds.contains([lat, lng]);
+    })
+    .map(s => getStationPrice(s, currentFuel))
+    .filter(p => p != null);
+
+  if (prices.length === 0) {
+    updateStats(0, null, null, null);
+    return;
+  }
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+  updateStats(prices.length, avg, min, max);
 }
 
 function showLoading(visible) {
@@ -258,4 +280,5 @@ document.getElementById('fuel-select').addEventListener('change', e => {
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 initMap();
+map.on('moveend zoomend', updateStatsFromBounds);
 fetchAllStations();
