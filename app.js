@@ -112,6 +112,7 @@ const FUEL_LABELS = {
 let map;
 let clusterGroup;
 let allStations = [];
+let routeStationFilter = null; // null = toutes les stations, Set = uniquement les stations de l'itinéraire
 let currentFuel = localStorage.getItem('fuel') || 'Gazole';
 let stationMarkers = []; // [{station, marker}]
 
@@ -414,7 +415,9 @@ function buildPopup(station, highlightedFuel) {
 function renderMarkers() {
   clusterGroup.clearLayers();
 
-  const prices = allStations
+  const stations = routeStationFilter ? allStations.filter(s => routeStationFilter.has(s)) : allStations;
+
+  const prices = stations
     .map(s => getStationPrice(s, currentFuel))
     .filter(p => p != null);
 
@@ -429,7 +432,7 @@ function renderMarkers() {
 
   stationMarkers = [];
 
-  allStations.forEach(station => {
+  stations.forEach(station => {
     const price = getStationPrice(station, currentFuel);
     if (price == null) return;
 
@@ -698,6 +701,9 @@ async function calculateRoute() {
       return;
     }
 
+    routeStationFilter = new Set(nearby.map(({ s }) => s));
+    renderMarkers();
+
     const top = nearby.slice(0, 5);
     const list = document.getElementById('route-stations');
     list.innerHTML = `<li class="route-list-header">${t('routeHeader', top.length, nearby.length)}</li>`;
@@ -743,7 +749,9 @@ document.getElementById('route-clear').addEventListener('click', () => {
   localStorage.removeItem('route');
   document.getElementById('route-from').value = '';
   document.getElementById('route-to').value   = '';
+  routeStationFilter = null;
   clearRoute();
+  renderMarkers();
 });
 
 // ── Autocomplete ──────────────────────────────────────────────────────────────
