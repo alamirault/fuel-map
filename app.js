@@ -1,5 +1,103 @@
 // ── Configuration ──────────────────────────────────────────────────────────
 
+// ── i18n ─────────────────────────────────────────────────────────────────────
+
+const TRANSLATIONS = {
+  en: {
+    title:          'Fuel Prices France',
+    h1:             '⛽ Fuel Prices',
+    subtitle:       'Gas stations in France in real time',
+    fuelLabel:      'Fuel type',
+    statStations:   'Stations shown',
+    statAvg:        'Avg price',
+    statMin:        'Min price',
+    statMinTitle:   'See cheapest station',
+    statMax:        'Max price',
+    statMaxTitle:   'See most expensive station',
+    loading:        'Loading data...',
+    locateBtn:      '📍 My location',
+    locating:       '⏳ Locating...',
+    routeSection:   '🗺 Route',
+    routeFrom:      'Start (city, address…)',
+    routeTo:        'Destination (city, address…)',
+    routeCalc:      'Calculate',
+    routeClear:     '✕ Clear',
+    routeLoading:   'Calculating…',
+    legendTitle:    'Legend',
+    legendCheap:    'Cheap',
+    legendExpensive:'Expensive',
+    loadError:      'Unable to load data.',
+    routeError:     'Unable to calculate route',
+    noStations:     'No station found on this route.',
+    routeHeader:    (n, total) => `⭐ ${n} cheapest (out of ${total} stations)`,
+    youAreHere:     'You are here',
+    noPrices:       'No prices available',
+    updatedOn:      'Updated on',
+    stationDefault: 'Station',
+    geoNotSupported:'Geolocation is not supported by your browser.',
+    geoError:       'Unable to get your location.',
+    geocodeError:   (q) => `Location not found: "${q}"`,
+  },
+  fr: {
+    title:          'Prix Carburant France',
+    h1:             '⛽ Prix Carburant',
+    subtitle:       'Stations en France en temps réel',
+    fuelLabel:      'Type de carburant',
+    statStations:   'Stations affichées',
+    statAvg:        'Prix moyen',
+    statMin:        'Prix min',
+    statMinTitle:   'Voir la station la moins chère',
+    statMax:        'Prix max',
+    statMaxTitle:   'Voir la station la plus chère',
+    loading:        'Chargement des données...',
+    locateBtn:      '📍 Ma position',
+    locating:       '⏳ Localisation...',
+    routeSection:   '🗺 Itinéraire',
+    routeFrom:      'Départ (ville, adresse…)',
+    routeTo:        'Arrivée (ville, adresse…)',
+    routeCalc:      'Calculer',
+    routeClear:     '✕ Effacer',
+    routeLoading:   'Calcul en cours…',
+    legendTitle:    'Légende',
+    legendCheap:    'Pas cher',
+    legendExpensive:'Cher',
+    loadError:      'Impossible de charger les données.',
+    routeError:     'Impossible de calculer l\'itinéraire',
+    noStations:     'Aucune station trouvée sur cet itinéraire.',
+    routeHeader:    (n, total) => `⭐ ${n} moins chères (sur ${total} stations)`,
+    youAreHere:     'Vous êtes ici',
+    noPrices:       'Aucun prix disponible',
+    updatedOn:      'Mis à jour le',
+    stationDefault: 'Station',
+    geoNotSupported:'La géolocalisation n\'est pas supportée par votre navigateur.',
+    geoError:       'Impossible d\'obtenir votre position.',
+    geocodeError:   (q) => `Lieu introuvable : "${q}"`,
+  },
+};
+
+let currentLang = localStorage.getItem('lang') || 'fr';
+
+function t(key, ...args) {
+  const val = (TRANSLATIONS[currentLang] ?? TRANSLATIONS.en)[key] ?? key;
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+function applyTranslations() {
+  document.title = t('title');
+  document.documentElement.lang = currentLang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  const langBtn = document.getElementById('lang-btn');
+  if (langBtn) langBtn.textContent = currentLang === 'fr' ? '🇬🇧 EN' : '🇫🇷 FR';
+}
+
 const FUEL_LABELS = {
   Gazole: 'Gazole',
   SP95:   'SP95',
@@ -205,7 +303,7 @@ async function loadData() {
 
     renderMarkers();
   } catch (err) {
-    showError(`Impossible de charger les données.<br>${err.message}`);
+    showError(`${t('loadError')}<br>${err.message}`);
   } finally {
     showLoading(false);
   }
@@ -270,7 +368,8 @@ function formatPrice(price) {
 function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
+    const locale = currentLang === 'fr' ? 'fr-FR' : 'en-GB';
+    return new Date(dateStr).toLocaleDateString(locale, {
       day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   } catch { return dateStr; }
@@ -302,13 +401,13 @@ function buildPopup(station, highlightedFuel) {
   const dateField = `${highlightedFuel.toLowerCase()}_maj`;
   const dateVal   = station[dateField];
 
-  const title = station.brand || 'Station';
+  const title = station.brand || t('stationDefault');
 
   return `<div class="popup-content">
     <div class="popup-header">${brandLogoHtml(station.brand)}<span class="popup-title">${title}</span></div>
     <div class="address">${addrLink}</div>
-    <div class="prices">${priceRows || '<em>Aucun prix disponible</em>'}</div>
-    ${dateVal ? `<div class="update-date">Mis à jour le ${formatDate(dateVal)}</div>` : ''}
+    <div class="prices">${priceRows || `<em>${t('noPrices')}</em>`}</div>
+    ${dateVal ? `<div class="update-date">${t('updatedOn')} ${formatDate(dateVal)}</div>` : ''}
   </div>`;
 }
 
@@ -352,7 +451,8 @@ function renderMarkers() {
 // ── UI helpers ────────────────────────────────────────────────────────────────
 
 function updateStats(count, avg, min, max) {
-  document.getElementById('stat-count').textContent = count.toLocaleString('fr-FR');
+  const countLocale = currentLang === 'fr' ? 'fr-FR' : 'en-GB';
+  document.getElementById('stat-count').textContent = count.toLocaleString(countLocale);
   document.getElementById('stat-avg').textContent   = avg  != null ? avg.toFixed(3)  + ' €' : '—';
   document.getElementById('stat-min').textContent   = min  != null ? min.toFixed(3)  + ' €' : '—';
   document.getElementById('stat-max').textContent   = max  != null ? max.toFixed(3)  + ' €' : '—';
@@ -441,12 +541,12 @@ let userMarker = null;
 
 document.getElementById('locate-btn').addEventListener('click', () => {
   if (!navigator.geolocation) {
-    alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+    alert(t('geoNotSupported'));
     return;
   }
 
   const btn = document.getElementById('locate-btn');
-  btn.textContent = '⏳ Localisation...';
+  btn.textContent = t('locating');
   btn.disabled = true;
 
   navigator.geolocation.getCurrentPosition(
@@ -469,15 +569,15 @@ document.getElementById('locate-btn').addEventListener('click', () => {
           iconAnchor: [8, 8],
         }),
         zIndexOffset: 1000,
-      }).addTo(map).bindPopup('Vous êtes ici');
+      }).addTo(map).bindPopup(t('youAreHere'));
 
       map.setView([lat, lng], 11);
-      btn.textContent = '📍 Ma position';
+      btn.textContent = t('locateBtn');
       btn.disabled = false;
     },
     () => {
-      alert('Impossible d\'obtenir votre position.');
-      btn.textContent = '📍 Ma position';
+      alert(t('geoError'));
+      btn.textContent = t('locateBtn');
       btn.disabled = false;
     }
   );
@@ -490,9 +590,9 @@ let routeMarkers  = [];
 
 async function geocode(query) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`;
-  const res  = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+  const res  = await fetch(url, { headers: { 'Accept-Language': currentLang } });
   const data = await res.json();
-  if (!data.length) throw new Error(`Lieu introuvable : "${query}"`);
+  if (!data.length) throw new Error(t('geocodeError', query));
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
 }
 
@@ -500,7 +600,7 @@ async function fetchRoute(from, to) {
   const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
   const res  = await fetch(url);
   const data = await res.json();
-  if (data.code !== 'Ok') throw new Error('Impossible de calculer l\'itinéraire');
+  if (data.code !== 'Ok') throw new Error(t('routeError'));
   return data.routes[0].geometry.coordinates; // [[lng, lat], …]
 }
 
@@ -564,16 +664,15 @@ async function calculateRoute() {
       .sort((a, b) => a.price - b.price);
 
     if (nearby.length === 0) {
-      document.getElementById('route-error').textContent = 'Aucune station trouvée sur cet itinéraire.';
+      document.getElementById('route-error').textContent = t('noStations');
       document.getElementById('route-error').classList.remove('hidden');
       document.getElementById('route-clear').classList.remove('hidden');
       return;
     }
 
-    // Affiche les 5 moins chères avec marqueur étoile
     const top = nearby.slice(0, 5);
     const list = document.getElementById('route-stations');
-    list.innerHTML = `<li class="route-list-header">⭐ ${top.length} moins chères (sur ${nearby.length} stations)</li>`;
+    list.innerHTML = `<li class="route-list-header">${t('routeHeader', top.length, nearby.length)}</li>`;
 
     top.forEach(({ s, lat, lng, price }, i) => {
       const marker = L.marker([lat, lng], {
@@ -630,7 +729,7 @@ function setupAutocomplete(inputId, suggestionsId) {
 
     debounceTimer = setTimeout(async () => {
       try {
-        const url  = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=fr&bbox=-5.1,41.3,9.6,51.1`;
+        const url  = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=${currentLang}&bbox=-5.1,41.3,9.6,51.1`;
         const res  = await fetch(url);
         const data = await res.json();
 
@@ -672,6 +771,14 @@ function setupAutocomplete(inputId, suggestionsId) {
 setupAutocomplete('route-from', 'route-from-suggestions');
 setupAutocomplete('route-to',   'route-to-suggestions');
 
+// ── Language toggle ───────────────────────────────────────────────────────────
+
+document.getElementById('lang-btn').addEventListener('click', () => {
+  currentLang = currentLang === 'fr' ? 'en' : 'fr';
+  localStorage.setItem('lang', currentLang);
+  applyTranslations();
+});
+
 // ── Mobile sidebar toggle ─────────────────────────────────────────────────────
 
 function toggleSidebar() {
@@ -685,6 +792,7 @@ document.getElementById('sidebar-toggle').addEventListener('click', toggleSideba
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
+applyTranslations();
 initMap();
 map.on('click', () => {
   if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');

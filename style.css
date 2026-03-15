@@ -25,11 +25,31 @@ body {
   z-index: 1000;
 }
 
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 #sidebar h1 {
   font-size: 1.4rem;
   font-weight: 700;
   color: #fff;
 }
+
+.lang-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #2e3650;
+  background: #252c3f;
+  color: #e8eaf0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.lang-btn:hover { background: #2e3854; }
 
 .subtitle {
   font-size: 0.78rem;

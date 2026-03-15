@@ -16,11 +16,14 @@
 
   <div id="sidebar">
     <div class="sidebar-handle" id="sidebar-handle"></div>
-    <h1>⛽ Prix Carburant</h1>
-    <p class="subtitle">Stations en France en temps réel</p>
+    <div class="sidebar-top">
+      <h1 data-i18n="h1">⛽ Prix Carburant</h1>
+      <button id="lang-btn" class="lang-btn">🇬🇧 EN</button>
+    </div>
+    <p class="subtitle" data-i18n="subtitle">Stations en France en temps réel</p>
 
     <div class="filter-section">
-      <label for="fuel-select">Type de carburant</label>
+      <label for="fuel-select" data-i18n="fuelLabel">Type de carburant</label>
       <select id="fuel-select">
         <option value="Gazole">Gazole (Diesel)</option>
         <option value="SP95">SP95</option>
@@ -33,59 +36,59 @@
 
     <div class="stats" id="stats">
       <div class="stat-box">
-        <span class="stat-label">Stations affichées</span>
+        <span class="stat-label" data-i18n="statStations">Stations affichées</span>
         <span class="stat-value" id="stat-count">—</span>
       </div>
       <div class="stat-box">
-        <span class="stat-label">Prix moyen</span>
+        <span class="stat-label" data-i18n="statAvg">Prix moyen</span>
         <span class="stat-value" id="stat-avg">—</span>
       </div>
-      <div class="stat-box clickable" title="Voir la station la moins chère">
-        <span class="stat-label">Prix min</span>
+      <div class="stat-box clickable" data-i18n-title="statMinTitle" title="Voir la station la moins chère">
+        <span class="stat-label" data-i18n="statMin">Prix min</span>
         <span class="stat-value green" id="stat-min">—</span>
       </div>
-      <div class="stat-box clickable" title="Voir la station la plus chère">
-        <span class="stat-label">Prix max</span>
+      <div class="stat-box clickable" data-i18n-title="statMaxTitle" title="Voir la station la plus chère">
+        <span class="stat-label" data-i18n="statMax">Prix max</span>
         <span class="stat-value red" id="stat-max">—</span>
       </div>
     </div>
 
     <div id="loading" class="loading">
       <div class="spinner"></div>
-      <span>Chargement des données...</span>
+      <span data-i18n="loading">Chargement des données...</span>
     </div>
 
     <div id="error-msg" class="error hidden"></div>
 
-    <button id="locate-btn">📍 Ma position</button>
+    <button id="locate-btn" data-i18n="locateBtn">📍 Ma position</button>
 
     <div class="route-section">
-      <label class="section-title">🗺 Itinéraire</label>
+      <label class="section-title" data-i18n="routeSection">🗺 Itinéraire</label>
       <div class="autocomplete-wrap">
-        <input id="route-from" type="text" placeholder="Départ (ville, adresse…)" autocomplete="off" />
+        <input id="route-from" type="text" data-i18n-placeholder="routeFrom" placeholder="Départ (ville, adresse…)" autocomplete="off" />
         <ul id="route-from-suggestions" class="suggestions hidden"></ul>
       </div>
       <div class="autocomplete-wrap">
-        <input id="route-to" type="text" placeholder="Arrivée (ville, adresse…)" autocomplete="off" />
+        <input id="route-to" type="text" data-i18n-placeholder="routeTo" placeholder="Arrivée (ville, adresse…)" autocomplete="off" />
         <ul id="route-to-suggestions" class="suggestions hidden"></ul>
       </div>
       <div class="route-buttons">
-        <button id="route-btn">Calculer</button>
-        <button id="route-clear" class="hidden">✕ Effacer</button>
+        <button id="route-btn" data-i18n="routeCalc">Calculer</button>
+        <button id="route-clear" class="hidden" data-i18n="routeClear">✕ Effacer</button>
       </div>
       <div id="route-loading" class="loading hidden">
-        <div class="spinner"></div><span>Calcul en cours…</span>
+        <div class="spinner"></div><span data-i18n="routeLoading">Calcul en cours…</span>
       </div>
       <div id="route-error" class="error hidden"></div>
       <ul id="route-stations"></ul>
     </div>
 
     <div class="legend">
-      <h3>Légende</h3>
+      <h3 data-i18n="legendTitle">Légende</h3>
       <div class="legend-gradient"></div>
       <div class="legend-labels">
-        <span>Pas cher</span>
-        <span>Cher</span>
+        <span data-i18n="legendCheap">Pas cher</span>
+        <span data-i18n="legendExpensive">Cher</span>
       </div>
     </div>
 
