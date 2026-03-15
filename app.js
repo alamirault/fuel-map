@@ -184,19 +184,12 @@ function findBrandInIndex(lat, lng, index) {
   return bestBrand;
 }
 
-function brandBadgeHtml(brand) {
+function brandLogoHtml(brand) {
   if (!brand) return '';
-  const bg       = BRAND_COLORS[brand] ?? '#555e78';
-  const txtColor = (bg === '#e2a900' || bg === '#c8a800') ? '#1a1f2e' : '#fff';
-  const logoUrl  = brandLogoUrl(brand);
-  const logoHtml = logoUrl
-    ? `<img src="${logoUrl}" height="24" style="border-radius:4px;vertical-align:middle;margin-right:6px;" onerror="this.style.display='none'">`
+  const url = brandLogoUrl(brand);
+  return url
+    ? `<img src="${url}" height="22" style="border-radius:3px;margin-right:6px;vertical-align:middle;" onerror="this.style.display='none'">`
     : '';
-  return `<div class="popup-brand-row">
-    <span class="popup-brand" style="background:${bg};color:${txtColor}">
-      ${logoHtml}${brand}
-    </span>
-  </div>`;
 }
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
@@ -319,11 +312,9 @@ function buildPopup(station, highlightedFuel) {
   const wazeUrl  = lat ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes` : null;
   const gmapsUrl = lat ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` : null;
 
-  const navHtml = (wazeUrl && gmapsUrl) ? `
-    <div class="nav-buttons">
-      <a href="${wazeUrl}" target="_blank" class="nav-btn waze">Waze</a>
-      <a href="${gmapsUrl}" target="_blank" class="nav-btn gmaps">Google Maps</a>
-    </div>` : '';
+  const addrLink = fullAddr
+    ? `<a href="https://maps.google.com/maps?q=${encodeURIComponent(fullAddr)}" target="_blank" class="address-link">${fullAddr}</a>`
+    : '<span>—</span>';
 
   const allFuels = ['Gazole', 'SP95', 'SP98', 'E10', 'E85', 'GPLc'];
   const priceRows = allFuels.map(fuel => {
@@ -342,9 +333,8 @@ function buildPopup(station, highlightedFuel) {
   const title = station.brand || 'Station';
 
   return `<div class="popup-content">
-    ${brandBadgeHtml(station.brand) || `<div class="popup-brand-row"><span class="popup-brand" style="background:#555e78;color:#fff">⛽ ${title}</span></div>`}
-    <div class="address">${fullAddr || '—'}</div>
-    ${navHtml}
+    <div class="popup-header">${brandLogoHtml(station.brand)}<span class="popup-title">${title}</span></div>
+    <div class="address">${addrLink}</div>
     <div class="prices">${priceRows || '<em>Aucun prix disponible</em>'}</div>
     ${dateVal ? `<div class="update-date">Mis à jour le ${formatDate(dateVal)}</div>` : ''}
   </div>`;
