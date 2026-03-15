@@ -82,28 +82,13 @@ function initMap() {
 // ── Data fetching ────────────────────────────────────────────────────────────
 
 async function fetchAllStations() {
-  const batchSize = 100;
-  let offset = 0;
-  let total = null;
-  const results = [];
-
   showLoading(true);
 
   try {
-    while (true) {
-      const url = `https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records?limit=${batchSize}&offset=${offset}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-
-      if (total === null) total = json.total_count;
-      results.push(...json.results);
-
-      offset += batchSize;
-      if (offset >= total || offset >= 3000) break; // cap at 3 000 stations for performance
-    }
-
-    allStations = results;
+    const url = 'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?limit=-1';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allStations = await res.json();
     renderMarkers();
   } catch (err) {
     showError(`Impossible de charger les données.<br>${err.message}`);
