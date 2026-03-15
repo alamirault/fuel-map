@@ -454,7 +454,6 @@ function pulseOnMarker(marker) {
     zIndexOffset: 2000,
   }).addTo(map);
 
-  setTimeout(() => { if (pulseMarker) { pulseMarker.remove(); pulseMarker = null; } }, 3000);
 }
 
 document.getElementById('stat-min').closest('.stat-box').addEventListener('click', () => pulseOnMarker(visibleMinMarker));
