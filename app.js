@@ -1,10 +1,5 @@
 // ── Configuration ──────────────────────────────────────────────────────────
 
-const API_URL =
-  'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/' +
-  'prix-des-carburants-en-france-flux-instantane-v2/records' +
-  '?limit=100&offset=0';
-
 const FUEL_LABELS = {
   Gazole: 'Gazole',
   SP95:   'SP95',
@@ -89,25 +84,6 @@ function haversine(lat1, lng1, lat2, lng2) {
 
 // ── OSM brand fetch + spatial index ──────────────────────────────────────────
 
-const BRAND_COLORS = {
-  'TotalEnergies': '#e40000', 'Total': '#e40000', 'Total Access': '#e40000',
-  'BP': '#00a550',
-  'Shell': '#e2a900',
-  'Esso': '#003087',
-  'Elf': '#e40000',
-  'Agip': '#e40000',
-  'Avia': '#ff6600',
-  'Dyneff': '#003087',
-  'E.Leclerc': '#003da5', 'Leclerc': '#003da5',
-  'Intermarché': '#e2001a',
-  'Carrefour': '#004a97', 'Carrefour Market': '#004a97',
-  'Auchan': '#e2001a',
-  'Casino': '#00843d', 'Géant Casino': '#00843d',
-  'Super U': '#e2001a', 'Hyper U': '#e2001a', 'Système U': '#e2001a',
-  'Netto': '#c8a800',
-  'Lidl': '#0050aa',
-  'Vito': '#ff6600',
-};
 
 
 const BRAND_LOGO = {
