@@ -310,10 +310,20 @@ function formatDate(dateStr) {
 }
 
 function buildPopup(station, highlightedFuel) {
-  const name = station.adresse
-    ? `${station.adresse}${station.cp ? ` — ${station.cp}` : ''}`
-    : 'Station inconnue';
-  const addr = [station.ville, station.departement].filter(Boolean).join(', ');
+  const adresseLine = [station.adresse, station.cp].filter(Boolean).join(' ');
+  const cityLine    = [station.ville, station.departement].filter(Boolean).join(', ');
+  const fullAddr    = [adresseLine, cityLine].filter(Boolean).join(', ');
+
+  const lat = station.geom?.lat;
+  const lng = station.geom?.lon;
+  const wazeUrl  = lat ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes` : null;
+  const gmapsUrl = lat ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` : null;
+
+  const navHtml = (wazeUrl && gmapsUrl) ? `
+    <div class="nav-buttons">
+      <a href="${wazeUrl}" target="_blank" class="nav-btn waze">Waze</a>
+      <a href="${gmapsUrl}" target="_blank" class="nav-btn gmaps">Google Maps</a>
+    </div>` : '';
 
   const allFuels = ['Gazole', 'SP95', 'SP98', 'E10', 'E85', 'GPLc'];
   const priceRows = allFuels.map(fuel => {
@@ -329,10 +339,12 @@ function buildPopup(station, highlightedFuel) {
   const dateField = `${highlightedFuel.toLowerCase()}_maj`;
   const dateVal   = station[dateField];
 
+  const title = station.brand || 'Station';
+
   return `<div class="popup-content">
-    ${brandBadgeHtml(station.brand)}
-    <h3>${name}</h3>
-    <div class="address">${addr}</div>
+    ${brandBadgeHtml(station.brand) || `<div class="popup-brand-row"><span class="popup-brand" style="background:#555e78;color:#fff">⛽ ${title}</span></div>`}
+    <div class="address">${fullAddr || '—'}</div>
+    ${navHtml}
     <div class="prices">${priceRows || '<em>Aucun prix disponible</em>'}</div>
     ${dateVal ? `<div class="update-date">Mis à jour le ${formatDate(dateVal)}</div>` : ''}
   </div>`;
