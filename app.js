@@ -157,8 +157,10 @@ function formatDate(dateStr) {
 }
 
 function buildPopup(station, highlightedFuel) {
-  const name   = station.nom || station.enseignes || 'Station';
-  const addr   = [station.adresse, station.ville].filter(Boolean).join(', ');
+  const name = station.adresse
+    ? `${station.adresse}${station.cp ? ` — ${station.cp}` : ''}`
+    : 'Station inconnue';
+  const addr = [station.ville, station.departement].filter(Boolean).join(', ');
 
   const allFuels = ['Gazole', 'SP95', 'SP98', 'E10', 'E85', 'GPLc'];
   const priceRows = allFuels.map(fuel => {
