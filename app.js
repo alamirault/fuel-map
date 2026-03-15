@@ -28,6 +28,11 @@ function initMap() {
     center: [46.5, 2.5],
     zoom: 6,
     zoomControl: true,
+    scrollWheelZoom: true,
+    doubleClickZoom: false,
+    touchZoom: false,
+    boxZoom: false,
+    keyboard: false,
   });
 
   // Fond neutre avec noms de villes intégrés
@@ -52,11 +57,18 @@ function initMap() {
             direction: 'center',
             className: 'dept-tooltip',
           });
+          layer.on('click', () => {
+            map.fitBounds(layer.getBounds(), { padding: [40, 40] });
+          });
         },
       }).addTo(map);
     });
 
-  clusterGroup = L.markerClusterGroup({ chunkedLoading: true });
+  clusterGroup = L.markerClusterGroup({
+    chunkedLoading: true,
+    maxClusterRadius: 40,
+    disableClusteringAtZoom: 9,
+  });
   map.addLayer(clusterGroup);
 }
 
