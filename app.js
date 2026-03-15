@@ -19,7 +19,7 @@ const FUEL_LABELS = {
 let map;
 let clusterGroup;
 let allStations = [];
-let currentFuel = 'Gazole';
+let currentFuel = localStorage.getItem('fuel') || 'Gazole';
 let stationMarkers = []; // [{station, marker}]
 
 // ── Map init ────────────────────────────────────────────────────────────────
@@ -288,8 +288,11 @@ function showError(msg) {
 
 // ── Events ────────────────────────────────────────────────────────────────────
 
-document.getElementById('fuel-select').addEventListener('change', e => {
+const fuelSelect = document.getElementById('fuel-select');
+fuelSelect.value = currentFuel;
+fuelSelect.addEventListener('change', e => {
   currentFuel = e.target.value;
+  localStorage.setItem('fuel', currentFuel);
   renderMarkers();
 });
 
