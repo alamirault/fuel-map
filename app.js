@@ -25,9 +25,13 @@ let stationMarkers = []; // [{station, marker}]
 // ── Map init ────────────────────────────────────────────────────────────────
 
 function initMap() {
+  const saved = JSON.parse(localStorage.getItem('mapView') || 'null');
+  const initCenter = saved ? [saved.lat, saved.lng] : [46.5, 2.5];
+  const initZoom   = saved ? saved.zoom : 6;
+
   map = L.map('map', {
-    center: [46.5, 2.5],
-    zoom: 6,
+    center: initCenter,
+    zoom: initZoom,
     zoomControl: true,
     scrollWheelZoom: true,
     doubleClickZoom: false,
@@ -365,5 +369,9 @@ document.getElementById('locate-btn').addEventListener('click', () => {
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 initMap();
-map.on('moveend zoomend', updateStatsFromBounds);
+map.on('moveend zoomend', () => {
+  const { lat, lng } = map.getCenter();
+  localStorage.setItem('mapView', JSON.stringify({ lat, lng, zoom: map.getZoom() }));
+  updateStatsFromBounds();
+});
 fetchAllStations();
