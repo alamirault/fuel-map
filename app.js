@@ -63,9 +63,6 @@ function initMap() {
             direction: 'center',
             className: 'dept-tooltip',
           });
-          layer.on('click', () => {
-            map.fitBounds(layer.getBounds(), { padding: [40, 40] });
-          });
         },
       }).addTo(map);
     });
@@ -709,10 +706,6 @@ function toggleSidebar() {
 document.getElementById('sidebar-handle').addEventListener('click', toggleSidebar);
 document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
 
-// Ouvre le panneau par défaut sur mobile après chargement
-if (window.innerWidth <= 768) {
-  document.getElementById('sidebar').classList.add('open');
-}
 
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
