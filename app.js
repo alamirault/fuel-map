@@ -207,30 +207,9 @@ function brandLogoUrl(brand) {
   return file ? `logos/${file}.png` : null;
 }
 
-const OSM_CACHE_KEY = 'osm_fuel_brands_v1';
-const OSM_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 jours
-
 async function fetchOSMStations() {
-  const cached = JSON.parse(localStorage.getItem(OSM_CACHE_KEY) || 'null');
-  if (cached && Date.now() - cached.ts < OSM_CACHE_TTL) return cached.data;
-
-  const query = `[out:json][timeout:60];node["amenity"="fuel"](41.3,-5.1,51.1,9.6);out body qt;`;
-  const res   = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
-  const json  = await res.json();
-
-  const data = json.elements
-    .map(el => ({
-      lat:   el.lat,
-      lon:   el.lon,
-      brand: el.tags?.brand || el.tags?.operator || el.tags?.name || null,
-    }))
-    .filter(s => s.brand);
-
-  try {
-    localStorage.setItem(OSM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-  } catch {} // quota dépassé : on continue sans cache
-
-  return data;
+  const res = await fetch('osm-brands.json');
+  return res.json();
 }
 
 function buildSpatialIndex(osmStations) {

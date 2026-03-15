@@ -1,0 +1,42 @@
+name: Update OSM brands
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Chaque nuit à 2h UTC
+  workflow_dispatch:      # Déclenchement manuel possible
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch OSM fuel station brands
+        run: |
+          curl -s --max-time 180 -X POST https://overpass-api.de/api/interpreter \
+            --data '[out:json][timeout:120];node["amenity"="fuel"](41.3,-5.1,51.1,9.6);out body qt;' \
+            | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+result = [
+  {
+    'lat': el['lat'],
+    'lon': el['lon'],
+    'brand': el.get('tags',{}).get('brand') or el.get('tags',{}).get('operator') or el.get('tags',{}).get('name')
+  }
+  for el in data['elements']
+  if el.get('tags',{}).get('brand') or el.get('tags',{}).get('operator') or el.get('tags',{}).get('name')
+]
+with open('osm-brands.json', 'w') as f:
+  json.dump(result, f)
+print(f'{len(result)} stations')
+"
+
+      - name: Commit if changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add osm-brands.json
+          git diff --cached --quiet || git commit -m "Update OSM brands data [skip ci]"
+          git push
