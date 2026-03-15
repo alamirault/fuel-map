@@ -277,6 +277,54 @@ document.getElementById('fuel-select').addEventListener('change', e => {
   renderMarkers();
 });
 
+// ── Geolocation ───────────────────────────────────────────────────────────────
+
+let userMarker = null;
+
+document.getElementById('locate-btn').addEventListener('click', () => {
+  if (!navigator.geolocation) {
+    alert('La géolocalisation n\'est pas supportée par votre navigateur.');
+    return;
+  }
+
+  const btn = document.getElementById('locate-btn');
+  btn.textContent = '⏳ Localisation...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      const { latitude: lat, longitude: lng } = coords;
+
+      if (userMarker) userMarker.remove();
+
+      userMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="
+            width:16px;height:16px;
+            background:#4a90e2;
+            border:3px solid #fff;
+            border-radius:50%;
+            box-shadow:0 0 0 3px rgba(74,144,226,0.4);
+          "></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        }),
+        zIndexOffset: 1000,
+      }).addTo(map).bindPopup('Vous êtes ici');
+
+      map.setView([lat, lng], 11);
+      btn.textContent = '📍 Ma position';
+      btn.disabled = false;
+    },
+    () => {
+      alert('Impossible d\'obtenir votre position.');
+      btn.textContent = '📍 Ma position';
+      btn.disabled = false;
+    }
+  );
+});
+
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 initMap();
