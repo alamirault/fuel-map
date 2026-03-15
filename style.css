@@ -484,15 +484,91 @@ body {
   padding-top: 6px;
 }
 
+/* ── Sidebar toggle (mobile only, hidden on desktop) ── */
+#sidebar-toggle {
+  display: none;
+}
+
+.sidebar-handle {
+  display: none;
+}
+
 /* ── Responsive ── */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   body { flex-direction: column; }
+
+  #map {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+
   #sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
     min-width: unset;
-    height: auto;
-    max-height: 45vh;
-    padding: 16px;
+    max-height: 75vh;
+    padding: 8px 16px 24px;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
   }
-  #map { flex: 1; }
+
+  #sidebar.open {
+    transform: translateY(0);
+  }
+
+  .sidebar-handle {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #555e78;
+    border-radius: 2px;
+    margin: 4px auto 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Aperçu visible quand sidebar fermée : titre + filtre */
+  #sidebar h1 { font-size: 1.1rem; }
+
+  #sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 999;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #1a1f2e;
+    color: #fff;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+
+  /* Touch targets plus grands */
+  #fuel-select,
+  #route-from,
+  #route-to,
+  #route-btn,
+  #locate-btn {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+
+  /* Popup plein largeur */
+  .leaflet-popup-content-wrapper {
+    width: 90vw;
+    max-width: 360px;
+  }
 }

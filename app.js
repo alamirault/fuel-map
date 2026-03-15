@@ -29,13 +29,14 @@ function initMap() {
   const initCenter = saved ? [saved.lat, saved.lng] : [46.5, 2.5];
   const initZoom   = saved ? saved.zoom : 6;
 
+  const isMobile = window.innerWidth <= 768;
   map = L.map('map', {
     center: initCenter,
     zoom: initZoom,
     zoomControl: true,
     scrollWheelZoom: true,
     doubleClickZoom: false,
-    touchZoom: false,
+    touchZoom: isMobile,
     boxZoom: false,
     keyboard: false,
   });
@@ -699,9 +700,27 @@ function setupAutocomplete(inputId, suggestionsId) {
 setupAutocomplete('route-from', 'route-from-suggestions');
 setupAutocomplete('route-to',   'route-to-suggestions');
 
+// ── Mobile sidebar toggle ─────────────────────────────────────────────────────
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+document.getElementById('sidebar-handle').addEventListener('click', toggleSidebar);
+document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+
+// Ouvre le panneau par défaut sur mobile après chargement
+if (window.innerWidth <= 768) {
+  document.getElementById('sidebar').classList.add('open');
+}
+
+
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 initMap();
+map.on('click', () => {
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+});
 map.on('moveend zoomend', () => {
   const { lat, lng } = map.getCenter();
   localStorage.setItem('mapView', JSON.stringify({ lat, lng, zoom: map.getZoom() }));
