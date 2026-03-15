@@ -29,7 +29,7 @@ const TRANSLATIONS = {
     loadError:      'Unable to load data.',
     routeError:     'Unable to calculate route',
     noStations:     'No station found on this route.',
-    routeHeader:    (n, total) => `⭐ ${n} closest (out of ${total} stations)`,
+    routeHeader:    (n, total) => `⭐ ${n} cheapest (out of ${total} stations)`,
     youAreHere:     'You are here',
     noPrices:       'No prices available',
     updatedOn:      'Updated on',
@@ -64,7 +64,7 @@ const TRANSLATIONS = {
     loadError:      'Impossible de charger les données.',
     routeError:     'Impossible de calculer l\'itinéraire',
     noStations:     'Aucune station trouvée sur cet itinéraire.',
-    routeHeader:    (n, total) => `⭐ ${n} plus proches (sur ${total} stations)`,
+    routeHeader:    (n, total) => `⭐ ${n} moins chères (sur ${total} stations)`,
     youAreHere:     'Vous êtes ici',
     noPrices:       'Aucun prix disponible',
     updatedOn:      'Mis à jour le',
@@ -596,12 +596,38 @@ async function geocode(query) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
 }
 
+function decodePolyline6(encoded) {
+  const coords = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let shift = 0, result = 0, b;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    coords.push([lng / 1e6, lat / 1e6]); // [lng, lat] pour correspondre au format OSRM
+  }
+  return coords;
+}
+
 async function fetchRoute(from, to) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
-  const res  = await fetch(url);
+  const res  = await fetch('https://valhalla1.openstreetmap.de/route', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      locations: [
+        { lon: from.lng, lat: from.lat },
+        { lon: to.lng,   lat: to.lat  },
+      ],
+      costing: 'auto',
+      costing_options: { auto: { shortest: true } },
+      units: 'km',
+    }),
+  });
   const data = await res.json();
-  if (data.code !== 'Ok') throw new Error(t('routeError'));
-  return data.routes[0].geometry.coordinates; // [[lng, lat], …]
+  if (!data.trip) throw new Error(t('routeError'));
+  return decodePolyline6(data.trip.legs[0].shape); // [[lng, lat], …]
 }
 
 
@@ -663,7 +689,7 @@ async function calculateRoute() {
         return dist <= RADIUS_KM ? { s, lat, lng, price, dist } : null;
       })
       .filter(Boolean)
-      .sort((a, b) => a.dist - b.dist);
+      .sort((a, b) => a.price - b.price);
 
     if (nearby.length === 0) {
       document.getElementById('route-error').textContent = t('noStations');
