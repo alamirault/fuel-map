@@ -422,13 +422,13 @@ body {
   color: #1a1f2e;
 }
 
-.address-link {
-  color: #4a90e2;
-  text-decoration: none;
+.popup-content address {
+  font-style: normal;
   font-size: 0.75rem;
+  color: #666;
   line-height: 1.4;
+  margin-bottom: 8px;
 }
-.address-link:hover { text-decoration: underline; }
 
 /* ── Popup ── */
 .leaflet-popup-content-wrapper {

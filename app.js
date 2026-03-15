@@ -312,9 +312,7 @@ function buildPopup(station, highlightedFuel) {
   const wazeUrl  = lat ? `https://waze.com/ul?ll=${lat},${lng}&navigate=yes` : null;
   const gmapsUrl = lat ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` : null;
 
-  const addrLink = fullAddr
-    ? `<a href="https://maps.google.com/maps?q=${encodeURIComponent(fullAddr)}" target="_blank" class="address-link">${fullAddr}</a>`
-    : '<span>—</span>';
+  const addrLink = `<address>${fullAddr || '—'}</address>`;
 
   const allFuels = ['Gazole', 'SP95', 'SP98', 'E10', 'E85', 'GPLc'];
   const priceRows = allFuels.map(fuel => {
