@@ -79,16 +79,146 @@ function initMap() {
   map.addLayer(clusterGroup);
 }
 
-// ── Data fetching ────────────────────────────────────────────────────────────
+// ── Utilities ────────────────────────────────────────────────────────────────
 
-async function fetchAllStations() {
-  showLoading(true);
+function haversine(lat1, lng1, lat2, lng2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a    = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ── OSM brand fetch + spatial index ──────────────────────────────────────────
+
+const BRAND_COLORS = {
+  'TotalEnergies': '#e40000', 'Total': '#e40000', 'Total Access': '#e40000',
+  'BP': '#00a550',
+  'Shell': '#e2a900',
+  'Esso': '#003087',
+  'Elf': '#e40000',
+  'Agip': '#e40000',
+  'Avia': '#ff6600',
+  'Dyneff': '#003087',
+  'E.Leclerc': '#003da5', 'Leclerc': '#003da5',
+  'Intermarché': '#e2001a',
+  'Carrefour': '#004a97', 'Carrefour Market': '#004a97',
+  'Auchan': '#e2001a',
+  'Casino': '#00843d', 'Géant Casino': '#00843d',
+  'Super U': '#e2001a', 'Hyper U': '#e2001a', 'Système U': '#e2001a',
+  'Netto': '#c8a800',
+  'Lidl': '#0050aa',
+  'Vito': '#ff6600',
+};
+
+
+const BRAND_LOGO = {
+  'TotalEnergies': 'totalenergies', 'Total': 'totalenergies', 'Total Access': 'totalenergies',
+  'BP': 'bp',
+  'Shell': 'shell',
+  'Esso': 'esso',
+  'Elf': 'totalenergies',
+  'Avia': 'avia',
+  'E.Leclerc': 'leclerc', 'Leclerc': 'leclerc',
+  'Intermarché': 'intermarche',
+  'Carrefour': 'carrefour', 'Carrefour Market': 'carrefour',
+  'Auchan': 'auchan',
+  'Casino': 'casino', 'Géant Casino': 'casino',
+  'Super U': 'systeme-u', 'Hyper U': 'systeme-u', 'Système U': 'systeme-u',
+  'Netto': 'netto',
+  'Lidl': 'lidl',
+};
+
+function brandLogoUrl(brand) {
+  const file = brand ? BRAND_LOGO[brand] : null;
+  return file ? `logos/${file}.png` : null;
+}
+
+const OSM_CACHE_KEY = 'osm_fuel_brands_v1';
+const OSM_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 jours
+
+async function fetchOSMStations() {
+  const cached = JSON.parse(localStorage.getItem(OSM_CACHE_KEY) || 'null');
+  if (cached && Date.now() - cached.ts < OSM_CACHE_TTL) return cached.data;
+
+  const query = `[out:json][timeout:60];node["amenity"="fuel"](41.3,-5.1,51.1,9.6);out body qt;`;
+  const res   = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
+  const json  = await res.json();
+
+  const data = json.elements
+    .map(el => ({
+      lat:   el.lat,
+      lon:   el.lon,
+      brand: el.tags?.brand || el.tags?.operator || el.tags?.name || null,
+    }))
+    .filter(s => s.brand);
 
   try {
-    const url = 'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?limit=-1';
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    allStations = await res.json();
+    localStorage.setItem(OSM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch {} // quota dépassé : on continue sans cache
+
+  return data;
+}
+
+function buildSpatialIndex(osmStations) {
+  const index = new Map();
+  for (const s of osmStations) {
+    const key = `${Math.round(s.lat * 100)},${Math.round(s.lon * 100)}`;
+    if (!index.has(key)) index.set(key, []);
+    index.get(key).push(s);
+  }
+  return index;
+}
+
+function findBrandInIndex(lat, lng, index) {
+  let bestBrand = null, bestDist = 0.35; // max 350m
+  for (let dlat = -1; dlat <= 1; dlat++) {
+    for (let dlng = -1; dlng <= 1; dlng++) {
+      const key = `${Math.round(lat * 100) + dlat},${Math.round(lng * 100) + dlng}`;
+      for (const c of index.get(key) ?? []) {
+        const d = haversine(lat, lng, c.lat, c.lon);
+        if (d < bestDist) { bestDist = d; bestBrand = c.brand; }
+      }
+    }
+  }
+  return bestBrand;
+}
+
+function brandBadgeHtml(brand) {
+  if (!brand) return '';
+  const bg       = BRAND_COLORS[brand] ?? '#555e78';
+  const txtColor = (bg === '#e2a900' || bg === '#c8a800') ? '#1a1f2e' : '#fff';
+  const logoUrl  = brandLogoUrl(brand);
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" height="24" style="border-radius:4px;vertical-align:middle;margin-right:6px;" onerror="this.style.display='none'">`
+    : '';
+  return `<div class="popup-brand-row">
+    <span class="popup-brand" style="background:${bg};color:${txtColor}">
+      ${logoHtml}${brand}
+    </span>
+  </div>`;
+}
+
+// ── Data fetching ─────────────────────────────────────────────────────────────
+
+async function loadData() {
+  showLoading(true);
+  try {
+    const [priceData, osmStations] = await Promise.all([
+      fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?limit=-1')
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+      fetchOSMStations().catch(() => []), // enseigne non bloquant
+    ]);
+
+    const index = buildSpatialIndex(osmStations);
+
+    // Enrichissement : attache le brand directement sur chaque station
+    allStations = priceData.map(s => {
+      const lat = s.geom?.lat;
+      const lng = s.geom?.lon;
+      return { ...s, brand: (lat && lng) ? findBrandInIndex(lat, lng, index) : null };
+    });
+
     renderMarkers();
   } catch (err) {
     showError(`Impossible de charger les données.<br>${err.message}`);
@@ -120,8 +250,12 @@ function priceColor(ratio) {
   return `rgb(${r},${g},40)`;
 }
 
-function makeIcon(color, price) {
-  const label = price.toFixed(2);
+function makeIcon(color, price, brand) {
+  const label   = price.toFixed(2);
+  const logoUrl = brandLogoUrl(brand);
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" width="14" height="14" style="border-radius:2px;vertical-align:middle;margin-right:3px;" onerror="this.style.display='none'">`
+    : '';
   return L.divIcon({
     className: '',
     html: `<div style="
@@ -136,10 +270,12 @@ function makeIcon(color, price) {
       box-shadow:0 1px 4px rgba(0,0,0,0.4);
       white-space:nowrap;
       line-height:1;
-    ">${label}€</div>`,
+      display:flex;
+      align-items:center;
+    ">${logoHtml}${label}€</div>`,
     iconSize: null,
-    iconAnchor: [20, 12],
-    popupAnchor: [0, -16],
+    iconAnchor: [24, 14],
+    popupAnchor: [0, -18],
   });
 }
 
@@ -177,7 +313,8 @@ function buildPopup(station, highlightedFuel) {
   const dateVal   = station[dateField];
 
   return `<div class="popup-content">
-    <h3>⛽ ${name}</h3>
+    ${brandBadgeHtml(station.brand)}
+    <h3>${name}</h3>
     <div class="address">${addr}</div>
     <div class="prices">${priceRows || '<em>Aucun prix disponible</em>'}</div>
     ${dateVal ? `<div class="update-date">Mis à jour le ${formatDate(dateVal)}</div>` : ''}
@@ -212,7 +349,7 @@ function renderMarkers() {
 
     const ratio  = (max === min) ? 0.5 : (price - min) / (max - min);
     const color  = priceColor(ratio);
-    const marker = L.marker([lat, lng], { icon: makeIcon(color, price) });
+    const marker = L.marker([lat, lng], { icon: makeIcon(color, price, station.brand) });
     marker.bindPopup(buildPopup(station, currentFuel), { maxWidth: 260 });
     clusterGroup.addLayer(marker);
     stationMarkers.push({ station, marker });
@@ -377,13 +514,6 @@ async function fetchRoute(from, to) {
   return data.routes[0].geometry.coordinates; // [[lng, lat], …]
 }
 
-function haversine(lat1, lng1, lat2, lng2) {
-  const R   = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a   = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 function minDistToRoute(lat, lng, routeCoords) {
   let min = Infinity;
@@ -560,4 +690,4 @@ map.on('moveend zoomend', () => {
   localStorage.setItem('mapView', JSON.stringify({ lat, lng, zoom: map.getZoom() }));
   updateStatsFromBounds();
 });
-fetchAllStations();
+loadData();
