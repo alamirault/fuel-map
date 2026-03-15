@@ -1,0 +1,262 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  height: 100vh;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f0f2f5;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: #1a1f2e;
+  color: #e8eaf0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+#sidebar h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.subtitle {
+  font-size: 0.78rem;
+  color: #8b92a8;
+  margin-top: -14px;
+}
+
+/* ── Filter ── */
+.filter-section label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b92a8;
+  margin-bottom: 6px;
+}
+
+#fuel-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #2e3650;
+  background: #252c3f;
+  color: #e8eaf0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#fuel-select:focus {
+  border-color: #4a90e2;
+}
+
+/* ── Stats ── */
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-box {
+  background: #252c3f;
+  border-radius: 10px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b92a8;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.stat-value.green { color: #4caf82; }
+.stat-value.red   { color: #e05252; }
+
+/* ── Loading ── */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #8b92a8;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #2e3650;
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.hidden { display: none !important; }
+
+/* ── Error ── */
+.error {
+  background: #3d1f1f;
+  border: 1px solid #7a2f2f;
+  color: #f08080;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* ── Legend ── */
+.legend {
+  border-top: 1px solid #2e3650;
+  padding-top: 16px;
+}
+
+.legend h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8b92a8;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
+.legend-gradient {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(to right, rgb(0,200,40), rgb(128,100,40), rgb(255,0,40));
+  margin-bottom: 4px;
+}
+
+.legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #8b92a8;
+}
+
+/* ── Footer ── */
+.footer {
+  margin-top: auto;
+  font-size: 0.72rem;
+  color: #555e78;
+  border-top: 1px solid #2e3650;
+  padding-top: 12px;
+}
+
+.footer a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+/* ── Map ── */
+#map {
+  flex: 1;
+  height: 100%;
+}
+
+/* ── Popup ── */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.popup-content {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-width: 180px;
+}
+
+.popup-content h3 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1a1f2e;
+  margin-bottom: 4px;
+}
+
+.popup-content .address {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.popup-content .prices {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.price-row .fuel-name {
+  color: #555;
+}
+
+.price-row .fuel-price {
+  font-weight: 700;
+  color: #1a1f2e;
+}
+
+.price-row.highlighted .fuel-price {
+  color: #4a90e2;
+  font-size: 0.95rem;
+}
+
+.popup-content .update-date {
+  font-size: 0.68rem;
+  color: #aaa;
+  margin-top: 8px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 6px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  body { flex-direction: column; }
+  #sidebar {
+    width: 100%;
+    min-width: unset;
+    height: auto;
+    max-height: 45vh;
+    padding: 16px;
+  }
+  #map { flex: 1; }
+}

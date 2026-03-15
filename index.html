@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prix Carburant France</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="sidebar">
+    <h1>⛽ Prix Carburant</h1>
+    <p class="subtitle">Stations en France en temps réel</p>
+
+    <div class="filter-section">
+      <label for="fuel-select">Type de carburant</label>
+      <select id="fuel-select">
+        <option value="Gazole">Gazole (Diesel)</option>
+        <option value="SP95">SP95</option>
+        <option value="SP98">SP98</option>
+        <option value="E10">E10</option>
+        <option value="E85">E85</option>
+        <option value="GPLc">GPLc</option>
+      </select>
+    </div>
+
+    <div class="stats" id="stats">
+      <div class="stat-box">
+        <span class="stat-label">Stations affichées</span>
+        <span class="stat-value" id="stat-count">—</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Prix moyen</span>
+        <span class="stat-value" id="stat-avg">—</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Prix min</span>
+        <span class="stat-value green" id="stat-min">—</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Prix max</span>
+        <span class="stat-value red" id="stat-max">—</span>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <span>Chargement des données...</span>
+    </div>
+
+    <div id="error-msg" class="error hidden"></div>
+
+    <div class="legend">
+      <h3>Légende</h3>
+      <div class="legend-gradient"></div>
+      <div class="legend-labels">
+        <span>Pas cher</span>
+        <span>Cher</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Source : <a href="https://data.economie.gouv.fr" target="_blank">data.economie.gouv.fr</a>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
