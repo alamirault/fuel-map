@@ -201,12 +201,29 @@ function brandBadgeHtml(brand) {
 
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
+const PRICE_CACHE_KEY = 'fuel_prices_v1';
+const PRICE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function fetchPriceData() {
+  const cached = JSON.parse(localStorage.getItem(PRICE_CACHE_KEY) || 'null');
+  if (cached && Date.now() - cached.ts < PRICE_CACHE_TTL) return cached.data;
+
+  const res = await fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?limit=-1');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+
+  try {
+    localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+  } catch {} // quota dépassé : on continue sans cache
+
+  return data;
+}
+
 async function loadData() {
   showLoading(true);
   try {
     const [priceData, osmStations] = await Promise.all([
-      fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json?limit=-1')
-        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }),
+      fetchPriceData(),
       fetchOSMStations().catch(() => []), // enseigne non bloquant
     ]);
 
