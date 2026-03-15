@@ -141,7 +141,7 @@ function initMap() {
     maxZoom: 19,
   }).addTo(map);
 
-  fetch('departements.geojson')
+  fetch('external/departements.geojson')
     .then(r => r.json())
     .then(geojson => {
       L.geoJSON(geojson, {
@@ -208,7 +208,7 @@ function brandLogoUrl(brand) {
 }
 
 async function fetchOSMStations() {
-  const res = await fetch('osm-brands.json');
+  const res = await fetch('external/osm-brands.json');
   return res.json();
 }
 

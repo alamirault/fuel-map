@@ -1,4 +1,4 @@
-name: Update OSM brands
+name: Update external data
 
 on:
   schedule:
@@ -28,15 +28,22 @@ result = [
   for el in data['elements']
   if el.get('tags',{}).get('brand') or el.get('tags',{}).get('operator') or el.get('tags',{}).get('name')
 ]
-with open('osm-brands.json', 'w') as f:
+with open('external/osm-brands.json', 'w') as f:
   json.dump(result, f)
 print(f'{len(result)} stations')
 "
+
+      - name: Fetch departements GeoJSON
+        run: |
+          curl -s --max-time 60 \
+            https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson \
+            -o external/departements.geojson
+          echo "$(python3 -c "import json; d=json.load(open('external/departements.geojson')); print(len(d['features']), 'départements')")"
 
       - name: Commit if changed
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add osm-brands.json
-          git diff --cached --quiet || git commit -m "Update OSM brands data [skip ci]"
+          git add external/osm-brands.json external/departements.geojson
+          git diff --cached --quiet || git commit -m "Update external data [skip ci]"
           git push
