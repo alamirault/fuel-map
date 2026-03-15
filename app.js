@@ -30,10 +30,31 @@ function initMap() {
     zoomControl: true,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  // Fond neutre avec noms de villes intégrés
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
     maxZoom: 19,
   }).addTo(map);
+
+  fetch('departements.geojson')
+    .then(r => r.json())
+    .then(geojson => {
+      L.geoJSON(geojson, {
+        style: {
+          color: '#2255bb',
+          weight: 2,
+          fillColor: '#ccdcf5',
+          fillOpacity: 0.25,
+        },
+        onEachFeature(feature, layer) {
+          layer.bindTooltip(feature.properties.nom, {
+            permanent: false,
+            direction: 'center',
+            className: 'dept-tooltip',
+          });
+        },
+      }).addTo(map);
+    });
 
   clusterGroup = L.markerClusterGroup({ chunkedLoading: true });
   map.addLayer(clusterGroup);
