@@ -356,6 +356,202 @@ document.getElementById('locate-btn').addEventListener('click', () => {
   );
 });
 
+// ── Route ─────────────────────────────────────────────────────────────────────
+
+let routeLayer    = null;
+let routeMarkers  = [];
+
+async function geocode(query) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`;
+  const res  = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+  const data = await res.json();
+  if (!data.length) throw new Error(`Lieu introuvable : "${query}"`);
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+async function fetchRoute(from, to) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+  const res  = await fetch(url);
+  const data = await res.json();
+  if (data.code !== 'Ok') throw new Error('Impossible de calculer l\'itinéraire');
+  return data.routes[0].geometry.coordinates; // [[lng, lat], …]
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R   = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a   = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function minDistToRoute(lat, lng, routeCoords) {
+  let min = Infinity;
+  for (const [rLng, rLat] of routeCoords) {
+    const d = haversine(lat, lng, rLat, rLng);
+    if (d < min) min = d;
+  }
+  return min;
+}
+
+function clearRoute() {
+  if (routeLayer)  { routeLayer.remove(); routeLayer = null; }
+  routeMarkers.forEach(m => m.remove());
+  routeMarkers = [];
+  document.getElementById('route-stations').innerHTML = '';
+  document.getElementById('route-clear').classList.add('hidden');
+  document.getElementById('route-error').classList.add('hidden');
+}
+
+async function calculateRoute() {
+  const fromVal = document.getElementById('route-from').value.trim();
+  const toVal   = document.getElementById('route-to').value.trim();
+  if (!fromVal || !toVal) return;
+
+  clearRoute();
+  document.getElementById('route-loading').classList.remove('hidden');
+  document.getElementById('route-error').classList.add('hidden');
+
+  try {
+    const fromInput = document.getElementById('route-from');
+    const toInput   = document.getElementById('route-to');
+    const from = fromInput.dataset.lat
+      ? { lat: parseFloat(fromInput.dataset.lat), lng: parseFloat(fromInput.dataset.lng) }
+      : await geocode(fromVal);
+    const to = toInput.dataset.lat
+      ? { lat: parseFloat(toInput.dataset.lat), lng: parseFloat(toInput.dataset.lng) }
+      : await geocode(toVal);
+    const routeCoords = await fetchRoute(from, to);
+
+    // Trace la route
+    routeLayer = L.polyline(routeCoords.map(([lng, lat]) => [lat, lng]), {
+      color: '#4a90e2', weight: 4, opacity: 0.8,
+    }).addTo(map);
+    map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+
+    // Stations à moins de 5 km du trajet, avec prix disponible
+    const RADIUS_KM = 5;
+    const nearby = allStations
+      .map(s => {
+        const lat   = s.geom?.lat;
+        const lng   = s.geom?.lon;
+        const price = getStationPrice(s, currentFuel);
+        if (!lat || !lng || price == null) return null;
+        const dist = minDistToRoute(lat, lng, routeCoords);
+        return dist <= RADIUS_KM ? { s, lat, lng, price, dist } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.price - b.price);
+
+    if (nearby.length === 0) {
+      document.getElementById('route-error').textContent = 'Aucune station trouvée sur cet itinéraire.';
+      document.getElementById('route-error').classList.remove('hidden');
+      document.getElementById('route-clear').classList.remove('hidden');
+      return;
+    }
+
+    // Affiche les 5 moins chères avec marqueur étoile
+    const top = nearby.slice(0, 5);
+    const list = document.getElementById('route-stations');
+    list.innerHTML = `<li class="route-list-header">⭐ ${top.length} moins chères (sur ${nearby.length} stations)</li>`;
+
+    top.forEach(({ s, lat, lng, price }, i) => {
+      const marker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div class="route-star-marker">${i + 1}</div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 46],
+          popupAnchor: [0, -50],
+        }),
+        zIndexOffset: 1500,
+      }).addTo(map).bindPopup(buildPopup(s, currentFuel), { maxWidth: 260 });
+      routeMarkers.push(marker);
+
+      const li = document.createElement('li');
+      li.className = 'route-station-item';
+      li.innerHTML = `<span class="route-rank">${i + 1}</span>
+        <span class="route-info">
+          <span class="route-addr">${s.adresse || '—'}, ${s.ville || ''}</span>
+          <span class="route-price">${price.toFixed(3)} €/L</span>
+        </span>`;
+      li.addEventListener('click', () => {
+        map.setView([lat, lng], Math.max(map.getZoom(), 13));
+        marker.openPopup();
+      });
+      list.appendChild(li);
+    });
+
+    document.getElementById('route-clear').classList.remove('hidden');
+  } catch (err) {
+    document.getElementById('route-error').textContent = err.message;
+    document.getElementById('route-error').classList.remove('hidden');
+  } finally {
+    document.getElementById('route-loading').classList.add('hidden');
+  }
+}
+
+document.getElementById('route-btn').addEventListener('click', calculateRoute);
+document.getElementById('route-clear').addEventListener('click', clearRoute);
+
+// ── Autocomplete ──────────────────────────────────────────────────────────────
+
+function setupAutocomplete(inputId, suggestionsId) {
+  const input = document.getElementById(inputId);
+  const list  = document.getElementById(suggestionsId);
+  let debounceTimer = null;
+
+  input.addEventListener('input', () => {
+    delete input.dataset.lat;
+    delete input.dataset.lng;
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if (q.length < 3) { list.classList.add('hidden'); return; }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const url  = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=fr&bbox=-5.1,41.3,9.6,51.1`;
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        list.innerHTML = '';
+        if (!data.features?.length) { list.classList.add('hidden'); return; }
+
+        data.features.forEach(item => {
+          const p    = item.properties;
+          const parts = [p.name, p.street && p.housenumber ? `${p.housenumber} ${p.street}` : p.street, p.city || p.town || p.village, p.postcode].filter(Boolean);
+          const label = [...new Set(parts)].join(', ');
+          const [lng, lat] = item.geometry.coordinates;
+
+          const li = document.createElement('li');
+          li.textContent = label;
+          li.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value = label;
+            input.dataset.lat = lat;
+            input.dataset.lng = lng;
+            list.classList.add('hidden');
+          });
+          list.appendChild(li);
+        });
+        list.classList.remove('hidden');
+      } catch { list.classList.add('hidden'); }
+    }, 300);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { list.classList.add('hidden'); calculateRoute(); }
+    if (e.key === 'Escape') list.classList.add('hidden');
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => list.classList.add('hidden'), 150);
+  });
+}
+
+setupAutocomplete('route-from', 'route-from-suggestions');
+setupAutocomplete('route-to',   'route-to-suggestions');
+
 // ── Boot ───────────────────────────────────────────────────────────────────────
 
 initMap();

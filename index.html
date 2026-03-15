@@ -56,6 +56,27 @@
 
     <button id="locate-btn">📍 Ma position</button>
 
+    <div class="route-section">
+      <label class="section-title">🗺 Itinéraire</label>
+      <div class="autocomplete-wrap">
+        <input id="route-from" type="text" placeholder="Départ (ville, adresse…)" autocomplete="off" />
+        <ul id="route-from-suggestions" class="suggestions hidden"></ul>
+      </div>
+      <div class="autocomplete-wrap">
+        <input id="route-to" type="text" placeholder="Arrivée (ville, adresse…)" autocomplete="off" />
+        <ul id="route-to-suggestions" class="suggestions hidden"></ul>
+      </div>
+      <div class="route-buttons">
+        <button id="route-btn">Calculer</button>
+        <button id="route-clear" class="hidden">✕ Effacer</button>
+      </div>
+      <div id="route-loading" class="loading hidden">
+        <div class="spinner"></div><span>Calcul en cours…</span>
+      </div>
+      <div id="route-error" class="error hidden"></div>
+      <ul id="route-stations"></ul>
+    </div>
+
     <div class="legend">
       <h3>Légende</h3>
       <div class="legend-gradient"></div>
